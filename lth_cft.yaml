@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create an IAM role and custom policy
+Parameters:
+  environment:
+    Type: String
+    Default: dev
+  product:
+    Type: String
+    Default: lth
+  service:
+    Type: String
+    Default: github-actions
+Resources:
+  GitHubAssumeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${environment}-${product}-github-assume-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  - repo:imp-ress-ico/lth_app:*
+      Policies:
+        - PolicyName: !Sub ${environment}-${product}-github-send-command-policy2
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:CancelCommand
+                  - ssm:SendCommand
+                  - ssm:GetCommandInvocation
+                Resource: '*'
+  # OIDCIdentityProvider:
+  #   Type: AWS::IAM::OIDCProvider
+  #   Properties:
+  #     Url: https://token.actions.githubusercontent.com
+  #     ClientIdList:
+  #       - sts.amazonaws.com
+Outputs:
+  GitHubAssumeRoleArn:
+    Description: ARN of the GitHubAssumeRole IAM Role
+    Value: !GetAtt GitHubAssumeRole.Arn
+    Export:
+      Name: !Sub ${environment}-${product}-github-assume-updaterole-arn
+  # OIDCProviderArn:
+  #   Description: The ARN of the OIDC Identity Provider
+  #   Value: !GetAtt OIDCIdentityProvider.Arn

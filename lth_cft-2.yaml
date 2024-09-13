@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create an IAM user, role, and policy, and attach them to the user.
+
+Resources:
+  # Create IAM User
+  IAMUser:
+    Type: "AWS::IAM::User"
+    Properties: 
+      UserName: !Ref IAMUserName
+
+  # Create IAM Role
+  IAMRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Ref IAMRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ec2.amazonaws.com"  # Change to relevant service if needed
+            Action: "sts:AssumeRole"
+
+  # Attach Inline Policy to the Role
+  IAMRolePolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: !Ref IAMPolicyName
+      Roles: 
+        - !Ref IAMRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "s3:ListBucket"
+              - "s3:GetObject"
+            Resource: "*"
+
+Parameters:
+  IAMUserName:
+    Description: "The name of the IAM User"
+    Type: String
+    Default: "my-iam-user"
+
+  IAMRoleName:
+    Description: "The name of the IAM Role"
+    Type: String
+    Default: "my-iam-role"
+
+  IAMPolicyName:
+    Description: "The name of the IAM Policy"
+    Type: String
+    Default: "my-iam-policy"

@@ -44,7 +44,7 @@ If you’re interested in following along or running the code yourself:
    ```
 6. **Create a Plan**:
    ```bash
-   terraform plan -out=tfplan
+   terraform plan -out=tfplan -var-file="aws_cred.tfvars"
    ```
    This command creates an execution plan and saves it to a file named `tfplan`. This allows you to review the changes Terraform will make before applying them.
 
