@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      # Replace with your ECR image URI or local Docker image
+      ImageUri: 6374xxxxxx61.dkr.ecr.us-east-2.amazonaws.com/main-testing-rds-to-s3-backup:latest
+      MemorySize: 512
+      Timeout: 900  # Set timeout according to your needs (in seconds)
+      Environment:
+        Variables:
+          DATABASE_HOST: "testing-db.cneyassm2suc.us-east-2.rds.amazonaws.com"
+          DATABASE_NAME: "backupDB"
+          DATABASE_USERNAME: "postgres"
+          DATABASE_PASSWORD: "password"
+          RDS_BACKUP_S3_BUCKET: "s3-backup"
+          ENVIRONMENT: dev

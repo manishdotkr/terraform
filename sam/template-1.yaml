@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command: ["index.handler"]       
+      MemorySize: 512
+      Timeout: 900  # Set timeout according to your needs (in seconds)
+      Environment:
+        Variables:
+          DATABASE_HOST: "testing-db.cneyassm2suc.us-east-2.rds.amazonaws.com"
+          DATABASE_NAME: "legaltech-prod2"
+          DATABASE_USERNAME: "postgres"
+          DATABASE_PASSWORD: "password"
+          RDS_BACKUP_S3_BUCKET: "lth-backup"
+          ENVIRONMENT: dev
+    Metadata:
+      Dockerfile: Dockerfile 
+      DockerContext: ./  
