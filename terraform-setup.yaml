@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template to create S3 bucket, DynamoDB table, IAM roles, and key pair.
+
+Parameters:
+  Product:
+    Type: String
+    Description: Name of the product
+  GitHubUserName:
+    Type: String
+    Description: GitHub Username
+  GitHubRepoName:
+    Type: String
+    Description: GitHub Repository Name
+  PublicKeyContent:
+    Type: String
+    Description: The content of the public key to be used for the EC2 key pair.
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: global-lth-cft-s3
+      Tags:
+        - Key: resource
+          Value: manish
+
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "global-${Product}-cft-dynamodbTable"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      Tags:
+        - Key: resource
+          Value: manish
+
+  OIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties: 
+      Url: "https://token.actions.githubusercontent.com"
+      ClientIdList:
+        - "sts.amazonaws.com"
+      ThumbprintList:
+        - "74f3a68f16524f15424927704c9506f55a9316bd"
+      Tags:
+        - Key: environment
+          Value: global
+        - Key: product
+          Value: !Ref Product
+        - Key: service
+          Value: oidc_provider
+        - Key: resource
+          Value: manish
+
+  GitHubAssumeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "global-${Product}-cft-github-assume_role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+              StringLike:
+                "token.actions.githubusercontent.com:sub": !Sub "repo:${GitHubUserName}/${GitHubRepoName}:*"
+      Tags:
+        - Key: resource
+          Value: manish
+
+  GitHubAssumeRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "global-${Product}-cft-github-assume_role_policy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: "*"
+            Resource: "*"
+      Roles:
+        - !Ref GitHubAssumeRole
+
+  EC2KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: "main-lth-cft-keyPair"
+      PublicKeyMaterial: !Ref PublicKeyContent
+
+Outputs:
+  S3BucketName:
+    Description: Name of the created S3 bucket
+    Value: !Ref S3Bucket
+
+  DynamoDBTableName:
+    Description: Name of the created DynamoDB table
+    Value: !Ref DynamoDBTable
+
+  GitHubAssumeRoleArn:
+    Description: ARN of the GitHub assume role
+    Value: !GetAtt GitHubAssumeRole.Arn
+
+  EC2KeyPairName:
+    Description: Name of the EC2 Key Pair created
+    Value: !Ref EC2KeyPair
